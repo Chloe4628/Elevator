@@ -30,14 +30,7 @@ Elevator e[2]; // 0表示电梯0 1表示电梯1 一共两台电梯
 
 int main(int argc, char** argv){
 	srand(time(NULL));
-	
-	
-	
-	display_initial_screen(LEVEL_NUM, 10);
-	gotoxy(0, LEVEL_NUM * 2 + 5);
-	showCursor();
-	
-	
+
 	Open_Up();
 	Simulation();
 	Stat();

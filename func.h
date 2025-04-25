@@ -30,5 +30,7 @@ Status Stat();
 int Get_Random(int min, int max);
 // 方向比较
 Elevator_Direction Judge_Direction(Level_Type start, Level_Type end);
-
+// 距离比较
+Level_Type Distance(Level_Type a, Level_Type b);
+ 
 #endif

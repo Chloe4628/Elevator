@@ -115,7 +115,13 @@ Status Process_Event(EL_Node *event){
 			 
 			if ((e[0].status == IDLE || e[0].status == PARKING) && (e[1].status == IDLE || e[1].status == PARKING) 
 			&& (e[0].ecur_people_num + e[0].reserved_people_num < MAX_CAPACITY && e[1].ecur_people_num + e[1].reserved_people_num < MAX_CAPACITY)){
-				suitable = Get_Random(0, 1);
+				if (Distance(e[0].ecur_level, cp->pstart_level) < Distance(e[1].ecur_level, cp->pstart_level)){
+					suitable = 0;
+				} else if (Distance(e[0].ecur_level, cp->pstart_level) > Distance(e[1].ecur_level, cp->pstart_level)){
+					suitable = 1;
+				} else {
+					suitable = Get_Random(0, 1);
+				}
 			} else if ((e[0].status == IDLE || e[0].status == PARKING) && e[0].ecur_people_num + e[0].reserved_people_num < MAX_CAPACITY){
 				suitable = 0;
 			} else if ((e[1].status == IDLE || e[1].status == PARKING) && e[1].ecur_people_num + e[1].reserved_people_num < MAX_CAPACITY){
@@ -126,7 +132,13 @@ Status Process_Event(EL_Node *event){
 				&& (e[0].ecur_people_num + e[0].reserved_people_num < MAX_CAPACITY && e[1].ecur_people_num + e[1].reserved_people_num < MAX_CAPACITY)
 				&& (e[0].ecur_level != cp->pstart_level || e[0].status != RUNNING)
 				&& (e[1].ecur_level != cp->pstart_level || e[1].status != RUNNING)){
-					suitable = Get_Random(0, 1);
+					if (Distance(e[0].ecur_level, cp->pstart_level) < Distance(e[1].ecur_level, cp->pstart_level)){
+						suitable = 0;
+					} else if (Distance(e[0].ecur_level, cp->pstart_level) > Distance(e[1].ecur_level, cp->pstart_level)){
+						suitable = 1;
+					} else {
+						suitable = Get_Random(0, 1);
+					}
 				} else if ((e[0].direction == STILL || e[0].direction == required_direction) && (d0 == required_direction || d0 == STILL)
 				&& e[0].ecur_people_num + e[0].reserved_people_num < MAX_CAPACITY
 				&& (e[0].ecur_level != cp->pstart_level || e[0].status != RUNNING)){
@@ -281,25 +293,19 @@ Status Process_Event(EL_Node *event){
 			// 上电梯
 			// 这里直接更新方向 如果flag还是STILL说明没人要进入
 			if (ce->direction == UP || (ce->direction == STILL && ce->id == 0)){
-//				puts("fff");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (LQ_Get_Num(ce->ecur_level, UP) != 0){
-//					puts("ddd");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					flag = UP;
 					ce->direction = UP;
 				} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
-//					puts("hhh");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					flag = DOWN;
 					ce->direction = DOWN;
 				}
 			}
 			if (ce->direction == DOWN || (ce->direction == STILL && ce->id == 1)){ 
-//				puts("ggg");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (LQ_Get_Num(ce->ecur_level, UP) != 0){
-//					puts("eee");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					flag = UP;
 					ce->direction = UP;
 				} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
-//					puts("iii");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					flag = DOWN;
 					ce->direction = DOWN;
 				}
@@ -311,14 +317,13 @@ Status Process_Event(EL_Node *event){
 			}
 
 			while (flag != STILL && qtr && ce->ecur_people_num + ce->reserved_people_num < MAX_CAPACITY){
-//				puts("jjj");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (io_time - qtr->people.arr_time <= qtr->people.max_wait){
-//					puts("kkk");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					active = 1;
 					// 提前将人进入事件加入事件链表
 					EL_Insert(io_time + PEOPLE_IN_OUT_TIME, IN, ce->id, qtr->people.pnum, ce->ecur_level);
 					// 提前将人状态设为IN_ELEVATOR以免进入时发生放弃事件
 					qtr->people.status = IN_ELEVATOR;
+					people[qtr->people.pnum].status = IN_ELEVATOR;
 					 
 					io_time += PEOPLE_IN_OUT_TIME;
 					ce->reserved_people_num++;
@@ -331,7 +336,6 @@ Status Process_Event(EL_Node *event){
 						exit(7);
 					}
 				} else {
-//					puts("!!!1"); // 有人放弃才会这样 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					qtr = qtr->next;			
 				}
 			}
@@ -355,7 +359,6 @@ Status Process_Event(EL_Node *event){
 				break; 
 			}
 			
-//			puts("lll");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			// 理论上不会有人还没出电梯 
 			PL_Node *ptr = ce->peoplelist->next;
 			while (ptr){
@@ -412,10 +415,6 @@ Status Process_Event(EL_Node *event){
 			PL_Insert(ce->peoplelist, *cp);
 			
 			ce->levellist[cp->pend_level] = YES;
-			
-//			if (ce->reserved_people_num == 0){
-//				EL_Insert(current_time + DOOR_CHECK_INTERVAL, DOOR_CHECK, ce->id, -1, ce->ecur_level);
-//			}
 			
 			break;
 		}
@@ -600,13 +599,10 @@ Status Look_Algorithm(Elevator *e){
 	if ((e->status == RUNNING && d != STILL && d == e->direction) || e->status == PARKING){
 		Level_Type next_level = e->ecur_level;
 		if (e->direction == UP && e->ecur_level < LEVEL_NUM){ // 往上 
-//			puts("aaa");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			next_level++;
 		} else if (e->direction == DOWN && e->ecur_level > 1){ // 往下 
-//			puts("bbb");////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			next_level--;
 		} else { // 理论上IDLE情况另外处理 在这里不会发生 但是为了保险
-//			puts("ccc"); ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			e->status = IDLE;
 			e->direction = STILL;
 			e->idle_start_time = current_time;
