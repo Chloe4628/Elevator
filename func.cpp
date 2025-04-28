@@ -228,8 +228,10 @@ Status Process_Event(EL_Node *event){
 						}
 					}	
 				} 
+			} else {
+				// 没有合适电梯 则继续等待 人留在队列 后续由LOOK算法的判断方向和判断是否停靠处理
+				printf("-----%d号人暂时没有合适电梯，先等待\n", cp->pnum);
 			}
-			// 没有合适电梯 则继续等待 人留在队列 后续由LOOK算法的判断方向和判断是否停靠处理
 			// 此到达事件解决 产生下一个 
 			Generate_New_People();
 			break;
@@ -243,7 +245,15 @@ Status Process_Event(EL_Node *event){
 				break;
 			}
 			ce->ecur_level = event->level;
+			
 			printf("%dt时，电梯%d来到%dF\n", current_time, ce->id, ce->ecur_level);
+			printf("当前需求是：");
+			for (int i = 1; i <= LEVEL_NUM; i++){
+				if (ce->levellist[i] == YES){
+					printf("%dF ", i);
+				}
+			}
+			printf("\n");
 			
 			ce->last_action_time = current_time;
 			
@@ -293,21 +303,40 @@ Status Process_Event(EL_Node *event){
 			// 上电梯
 			// 这里直接更新方向 如果flag还是STILL说明没人要进入
 			if (ce->direction == UP || (ce->direction == STILL && ce->id == 0)){
-				if (LQ_Get_Num(ce->ecur_level, UP) != 0){
-					flag = UP;
-					ce->direction = UP;
-				} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
-					flag = DOWN;
-					ce->direction = DOWN;
+				for (int i = ce->direction; i <= LEVEL_NUM; i++){
+					if (ce->levellist[i] == YES){
+						flag = UP;
+						ce->direction = UP;
+						break;
+					}
 				}
+				if (flag != UP){
+					if (LQ_Get_Num(ce->ecur_level, UP) != 0){
+						flag = UP;
+						ce->direction = UP;
+					} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
+						flag = DOWN;
+						ce->direction = DOWN;
+					}
+				} 
 			}
+			
 			if (ce->direction == DOWN || (ce->direction == STILL && ce->id == 1)){ 
-				if (LQ_Get_Num(ce->ecur_level, UP) != 0){
-					flag = UP;
-					ce->direction = UP;
-				} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
-					flag = DOWN;
-					ce->direction = DOWN;
+				for (int i = ce->direction; i >= 1; i--){
+					if (ce->levellist[i] == YES){
+						flag = DOWN;
+						ce->direction = DOWN;
+						break;
+					}
+				}
+				if (flag != DOWN){
+					if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
+						flag = DOWN;
+						ce->direction = DOWN;
+					} else if (LQ_Get_Num(ce->ecur_level, UP) != 0){
+						flag = UP;
+						ce->direction = UP;
+					}
 				}
 			}
 			
@@ -385,6 +414,9 @@ Status Process_Event(EL_Node *event){
 				printf("？？？异常13？？？\n");
 				exit(13);
 			}
+			if (ce->status != CLOSING){
+				break;
+			} 
 			printf("%dt时，电梯%d在%dF已经关门\n", current_time, ce->id, ce->ecur_level);
 			
 			if (ce->ecur_people_num != 0){
@@ -544,7 +576,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, UP) != 0){
+			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return UP;
 			}
 		}
@@ -552,7 +584,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return DOWN;
 			}
-			if (LQ_Get_Num(i, DOWN) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return DOWN;
 			}
 		}
@@ -561,7 +593,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == NO){
 				return DOWN;
 			}
-			if (LQ_Get_Num(i, DOWN) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return DOWN;
 			}
 		}
@@ -569,7 +601,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, UP) != 0){
+			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return UP;
 			}			
 		}
