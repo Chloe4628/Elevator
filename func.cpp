@@ -209,7 +209,7 @@ Status Process_Event(EL_Node *event){
 								// 提前将人进入事件加入事件链表
 								EL_Insert(io_time + PEOPLE_IN_OUT_TIME, IN, ce->id, cp->pnum, ce->ecur_level);
 								// 把此人从队列中删除 
-								if (LQ_DeQueue(ce->ecur_level, required_direction) == ERROR){
+								if (LQ_Del(ce->ecur_level, required_direction, cp->pnum) == ERROR){
 									printf("？？？异常11？？？\n");
 									exit(11);
 								}
@@ -346,7 +346,7 @@ Status Process_Event(EL_Node *event){
 			}
 
 			while (flag != STILL && qtr && ce->ecur_people_num + ce->reserved_people_num < MAX_CAPACITY){
-				if (io_time - qtr->people.arr_time <= qtr->people.max_wait){
+				if (io_time - qtr->people.arr_time <= qtr->people.max_wait && qtr->people.status == WAITING){
 					active = 1;
 					// 提前将人进入事件加入事件链表
 					EL_Insert(io_time + PEOPLE_IN_OUT_TIME, IN, ce->id, qtr->people.pnum, ce->ecur_level);
