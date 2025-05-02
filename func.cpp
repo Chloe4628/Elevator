@@ -476,8 +476,8 @@ Status Process_Event(EL_Node *event){
 			}
 			Level_Type tl = ce->id == 0? 1: LEVEL_NUM;
 			
-			// 检查上次活动事件和空闲时间 
-			if (ce->status == IDLE || current_time - ce->last_action_time >= AUTO_ORDER_TIME){
+			// 检查空闲时间 
+			if (ce->status == IDLE || current_time - ce->idle_start_time >= AUTO_ORDER_TIME){
 				if (ce->ecur_level != tl){
 					printf("%dt时，电梯%d已经空闲超过%dt，返回%dF候命\n", current_time, ce->id, AUTO_ORDER_TIME, tl);
 					
@@ -590,7 +590,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 		}
 	} else if (d == DOWN){
 		for (int i = e->ecur_level; i >= 1; i--){
-			if (e->levellist[i] == NO){
+			if (e->levellist[i] == YES){
 				return DOWN;
 			}
 			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
