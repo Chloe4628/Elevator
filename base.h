@@ -2,6 +2,8 @@
 #ifndef BASE_H
 #define BASE_H
 
+// 时间单位（毫秒） 
+#define ANIMATION_DELAY 100
 // 电梯总运行时间 
 #define MAX_SIMULATION_TIME 2000
 // 电梯运行1F单位时间
@@ -33,11 +35,11 @@ typedef int Time_Type;
 typedef int Level_Type;
 // 函数状态枚举
 typedef enum{
-    FALSE = 0,
-    TRUE = 1,
-    OK = 1,
-    ERROR = -1,
-    OVERFLOW = 0,
+    STATUS_FALSE = 0,
+    STATUS_TRUE = 1,
+    STATUS_OK = 1,
+    STATUS_ERROR = -1,
+    STATUS_OVERFLOW = 0,
 }Status; 
 // 电梯状态枚举
 typedef enum{
@@ -74,8 +76,8 @@ typedef enum{
 	DOOR_OPENED,
 	DOOR_CHECK,
 	DOOR_CLOSED,
-	IN,
-	OUT,
+	PEOPLE_IN,
+	PEOPLE_OUT,
 	IDLE_CHECK,
 	PEOPLE_GIVE_UP
 }Event_Type; 

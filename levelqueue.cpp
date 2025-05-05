@@ -16,7 +16,7 @@ Status LQ_Init(){
 		queues[i][DOWN].front->next = NULL;
 		queues[i][DOWN].rear = queues[i][DOWN].front;		
 	}
-	return OK;
+	return STATUS_OK;
 }
 // 2.入队
 Status LQ_EnQueue(Level_Type n, Elevator_Direction direction, People new_people){
@@ -25,7 +25,7 @@ Status LQ_EnQueue(Level_Type n, Elevator_Direction direction, People new_people)
 	new_node->next = NULL;
 	queues[n][direction].rear->next = new_node;
 	queues[n][direction].rear = new_node;
-	return OK;
+	return STATUS_OK;
 }
 // 3.展示队列 主要是测试用
 Status LQ_Display(Level_Type n, Elevator_Direction direction){  
@@ -40,7 +40,7 @@ Status LQ_Display(Level_Type n, Elevator_Direction direction){
 		p = p->next;
 	}
 	printf("----------\n");
-	return OK;
+	return STATUS_OK;
 } 
 // 4.出队
 Status LQ_DeQueue(Level_Type n, Elevator_Direction direction){
@@ -51,9 +51,9 @@ Status LQ_DeQueue(Level_Type n, Elevator_Direction direction){
 			queues[n][direction].rear = queues[n][direction].front;
 		}
 		free(p);
-		return OK;
+		return STATUS_OK;
 	}
-	return ERROR;
+	return STATUS_ERROR;
 }
 // 5.删除指定节点
 Status LQ_Del(Level_Type n, Elevator_Direction direction, int num){
@@ -67,11 +67,11 @@ Status LQ_Del(Level_Type n, Elevator_Direction direction, int num){
 				queues[n][direction].rear = p;
 			}
 			free(q);
-			return OK;
+			return STATUS_OK;
 		}
 		p = p->next;
 	}
-	return ERROR;
+	return STATUS_ERROR;
 }
 // 6.计算队列长度
 int LQ_Get_Num(Level_Type n, Elevator_Direction direction){
@@ -99,5 +99,5 @@ Status LQ_Destroy(){
 			free(r);
 		}
 	}
-	return OK;
+	return STATUS_OK;
 }

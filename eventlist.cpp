@@ -29,7 +29,7 @@ Status EL_Insert(Time_Type time, Event_Type type, int elevator_id, int person_id
 	new_node->next = p->next;
 	p->next = new_node;
 //	printf("DEBUG：%dt已经加入事件%d，电梯%d人%d层数%d\n", time, type + 1, elevator_id, person_id, level);
-	return OK;
+	return STATUS_OK;
 }
 // 3.计算事件数量
 int EL_Get_Num(EL_Node *head){
@@ -49,5 +49,5 @@ Status EL_Destroy(EL_Node *head){
 		p = p->next;
 		free(r);
 	}
-	return OK;
+	return STATUS_OK;
 }

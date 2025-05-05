@@ -23,7 +23,7 @@ Status PL_Insert(PL_Node *head, People new_people){
 	}
 	new_node->next = p->next;
 	p->next = new_node;
-	return OK;
+	return STATUS_OK;
 }
 // 3.展示乘客链表 主要是测试用 
 Status PL_Display(PL_Node *head){
@@ -34,7 +34,7 @@ Status PL_Display(PL_Node *head){
 		p = p->next;
 	}
 	printf("----------\n");
-	return OK; 
+	return STATUS_OK; 
 } 
 // 4.删除节点 
 Status PL_Del(PL_Node *head, PL_Node *tar){
@@ -45,9 +45,9 @@ Status PL_Del(PL_Node *head, PL_Node *tar){
 	if (p->next == tar){
 		p->next = tar->next;
 		free(tar);
-		return OK;
+		return STATUS_OK;
 	}
-	return ERROR;
+	return STATUS_ERROR;
 }
 // 5.计算电梯内乘客数量
 int PL_Get_Num(PL_Node *head){
@@ -67,6 +67,6 @@ Status PL_Destroy(PL_Node *head){
 		p = p->next;
 		free(r);
 	}
-	return OK;
+	return STATUS_OK;
 }
 
