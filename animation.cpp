@@ -119,8 +119,9 @@ void Draw_Elevator(int id, Level_Type floor, Elevator *e){
         int written = snprintf(
             buffer + current_pos,
             ELEVATOR_WIDTH - current_pos - 1,
-            " %d",
-            p->people.pnum
+            " %d(%dF)",
+            p->people.pnum,
+            p->people.pend_level
         );
 	    if (written > 0){
 			current_pos += written;
@@ -144,7 +145,7 @@ void Draw_Elevator(int id, Level_Type floor, Elevator *e){
 // 空白覆盖等候队列
 void Erase_Waiting_Queue(Level_Type floor){
 	int y = Floor2Y(floor);
-	Clear_Line(WAITING_QUEUE_X + 6, y - 1, 20);
+	Clear_Line(WAITING_QUEUE_X + 6, y - 1, 25);
 } 
 // 等候队列
 void Draw_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
@@ -155,7 +156,7 @@ void Draw_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
 	// UP队列
 	LQ_Node *p = uq->front->next;
 	while (p && cnt < MAX_WAIT_DISPLAY){
-        snprintf(buffer, sizeof(buffer), " %d↑", p->people.pnum);
+        snprintf(buffer, sizeof(buffer), " %d↑(%dF)", p->people.pnum, p->people.pend_level);
         printf("%s", buffer);
         p = p->next;
         cnt++;
@@ -163,7 +164,7 @@ void Draw_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
 	// DOWN队列
 	LQ_Node *q = dq->front->next;
 	while (q && cnt < MAX_WAIT_DISPLAY){
-		snprintf(buffer, sizeof(buffer), " %d↓", q->people.pnum);
+		snprintf(buffer, sizeof(buffer), " %d↓(%dF)", q->people.pnum, q->people.pend_level);
 		printf("%s", buffer);
 		q = q->next;
 		cnt++;
@@ -224,25 +225,23 @@ void Ani_Update_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
 	Erase_Waiting_Queue(floor);
 	Draw_Waiting_Queue(floor, uq, dq);
 } 
-// 更新乘客状态
-void Ani_Update_Person_Status(int id, const char *msg){
-//	int x = 0, y = 0;
-//	if (id == 0){
-//		x = ELEVATOR_0_X - 2;
-//		y = ELEVATOR_0_STATUS_Y;
-//	} else if (id == 1){
-//		x = ELEVATOR_1_X - 2;
-//		y = ELEVATOR_1_STATUS_Y;
-//	}	
-//	Clear_Line(x, y, 40);
-//	gotoxy(x, y);
-//	printf("%s", msg);
-} 
 // 全局提示
 void Ani_Update_General_Person_Status(const char *msg){
 	Clear_Line(0, 1, 70);
 	gotoxy(0, 1);
 	printf("提示信息：%s", msg);
+} 
+// debug提示电梯A
+void Ani_Debug_A(const char *msg){
+	Clear_Line(15, 3, 20);
+	gotoxy(15, 3);
+	printf("调试：%s", msg);
+} 
+// debug提示电梯B
+void Ani_Debug_B(const char *msg){
+	Clear_Line(43, 3, 20);
+	gotoxy(43, 3);
+	printf("调试：%s", msg);
 } 
 // 退出
 void Ani_Clean_Up(){

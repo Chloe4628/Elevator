@@ -3,9 +3,9 @@
 #define BASE_H
 
 // 时间单位（毫秒） 
-#define ANIMATION_DELAY 100
+#define ANIMATION_DELAY 70
 // 电梯总运行时间 
-#define MAX_SIMULATION_TIME 2000
+#define MAX_SIMULATION_TIME 1000
 // 电梯运行1F单位时间
 #define MOVE_LEVEL_TIME 20
 // 人出现时间间隔最大最小值 

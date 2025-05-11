@@ -34,8 +34,9 @@ void Ani_Update_Elevator_Position(int id, Level_Type of, Level_Type nf, Elevator
 void Ani_Update_Elevator_People(int id, Level_Type cf, Elevator *e);
 void Ani_Update_Elevator_Status(int id, const char *msg);
 void Ani_Update_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq);
-void Ani_Update_Person_Status(int id, const char *msg);
 void Ani_Update_General_Person_Status(const char *msg);
+void Ani_Debug_A(const char *msg);
+void Ani_Debug_B(const char *msg);
 void Ani_Clean_Up();
 
 #endif

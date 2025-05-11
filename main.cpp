@@ -29,8 +29,8 @@ int generated_people_num = 0;
 Elevator e[2]; // 0表示电梯0 1表示电梯1 一共两台电梯 
 
 int main(int argc, char** argv){
-	srand(time(NULL));
-
+	srand(24);
+// 1746622035
 	Open_Up();
 	Simulation();
 	Stat();
