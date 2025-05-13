@@ -26,10 +26,10 @@ int give_up_people_num = 0;
 // 生成的人数 没啥用
 int generated_people_num = 0; 
 // 电梯
-Elevator e[2]; // 0表示电梯0 1表示电梯1 一共两台电梯 
+Elevator e[2]; // 0表示电梯A 1表示电梯B 一共两台电梯 
 
 int main(int argc, char** argv){
-	srand(24);
+	srand(21);
 // 1746622035
 	Open_Up();
 	Simulation();

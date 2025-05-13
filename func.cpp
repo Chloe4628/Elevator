@@ -63,7 +63,8 @@ Status Generate_New_People(){
 	people[generated_people_num].pnum = generated_people_num;
 	people[generated_people_num].itv_time = Get_Random(ITV_MIN, ITV_MAX);
 	people[generated_people_num].arr_time = current_time + people[generated_people_num].itv_time;
-	people[generated_people_num].max_wait = Get_Random(WAIT_MIN, WAIT_MAX); 
+	people[generated_people_num].max_wait = Get_Random(WAIT_MIN, WAIT_MAX);
+	people[generated_people_num].elenum = -1;
 	
 	people[generated_people_num].pstart_level = Get_Random(1, LEVEL_NUM);
 	do {
@@ -212,17 +213,37 @@ Status Process_Event(EL_Node *event){
 								cp->status = IN_ELEVATOR;
 								people[cp->pnum].status = IN_ELEVATOR; 
 								
-								// 处理人进出的专用计时器
-								Time_Type io_time = current_time;
-								// 找到最后一个进出事件节点 
+								cp->elenum = ce->id;
+								people[cp->pnum].elenum = ce->id;
+								
+								// 处理此情况的专用计时器
+								Time_Type open_time = 0;
+								Time_Type io_time = 0;
+								// 找到之前的门开事件 
 								EL_Node *p = event_list;
 								while (p){
-									if ((p->type == PEOPLE_IN || p->type == PEOPLE_OUT) && p->elevator_id == ce->id && p->time > io_time){
-										io_time = p->time;	
+									if (p->type == DOOR_OPENED && p->elevator_id == ce->id && p->level == ce->ecur_level && p->time <= current_time){
+										if (p->time > open_time){
+											open_time = p->time;
+										}
 									}
 									p = p->next;
 								} 
-								
+								// 找到门开后最后的进出 如果没有另说
+								p = event_list;
+								while (p){
+									if ((p->type == PEOPLE_IN || p->type == PEOPLE_OUT) && p->elevator_id == ce->id && p->level == ce->ecur_level && p->time > open_time){
+										if (p->time > io_time){
+											io_time = p->time;
+										}
+									}
+									p = p->next;
+								} 
+								if (io_time > current_time){
+									io_time = io_time;
+								} else { // 如果门虽然开了但是之前没有进出 也就是上一个循环io_time没有被成功赋值 或者进出事件在current_time已经结束 
+									io_time = current_time;
+								} 
 								// 提前将人进入事件加入事件链表
 								EL_Insert(io_time + PEOPLE_IN_OUT_TIME, PEOPLE_IN, ce->id, cp->pnum, ce->ecur_level);
 								
@@ -355,12 +376,19 @@ Status Process_Event(EL_Node *event){
 
 			while (flag != STILL && qtr && ce->ecur_people_num + ce->reserved_people_num < MAX_CAPACITY){
 				if (io_time - qtr->people.arr_time <= qtr->people.max_wait && qtr->people.status == WAITING){
+					if (qtr->people.elenum != -1){
+						qtr = qtr->next;
+						continue;
+					}
 					active = 1;
 					// 提前将人进入事件加入事件链表
 					EL_Insert(io_time + PEOPLE_IN_OUT_TIME, PEOPLE_IN, ce->id, qtr->people.pnum, ce->ecur_level);
 					// 提前将人状态设为IN_ELEVATOR以免进入时发生放弃事件
 					qtr->people.status = IN_ELEVATOR;
 					people[qtr->people.pnum].status = IN_ELEVATOR;
+					
+					qtr->people.elenum = ce->id;
+					people[qtr->people.pnum].elenum = ce->id;
 					 
 					io_time += PEOPLE_IN_OUT_TIME;
 					ce->reserved_people_num++;
@@ -440,10 +468,11 @@ Status Process_Event(EL_Node *event){
 						break;
 					}
 				}
-				if (demand != STATUS_FALSE){
+				if (demand == STATUS_TRUE){
 					d = Direction_Change(ce); // 但是还有需求 不能停止 
 					if (d != STILL){
 						ce->status = RUNNING;
+						ce->direction = d;
 						Look_Algorithm(ce);
 						break;
 					} else {
@@ -486,6 +515,11 @@ Status Process_Event(EL_Node *event){
 				exit(14);
 			}
 			if (cp->status == GIVE_UP){
+				ce->reserved_people_num--;
+				break;
+			}
+			if (cp->elenum != ce->id){
+				ce->reserved_people_num--;
 				break;
 			}
 //			printf("%dt时，%d号人在%dF进入了电梯%d\n", current_time, cp->pnum, ce->ecur_level, ce->id);
@@ -559,7 +593,18 @@ Status Process_Event(EL_Node *event){
 					ce->status = PARKING;
 					ce->direction = Judge_Direction(ce->ecur_level, tl);
 					Ani_Update_Elevator_Status(ce->id, "返回待机");
+					
+					if (e->id == 0){
+						Ani_Debug_A("");
+					} else if (e->id == 1){
+						Ani_Debug_B("");
+					}
+					
 					Look_Algorithm(ce);
+				} else {
+					ce->direction = STILL;
+					ce->status = IDLE;
+					Ani_Update_Elevator_Status(ce->id, "待机");
 				} 
 			} else if (ce->status == IDLE){ // 其实理论上不应该发生 但是上保险
 				// 提前加入是否要回去待命检查
@@ -627,7 +672,7 @@ Status Simulation(){
 				exit(3);
 			}
 		} 
-		Sleep(ANIMATION_DELAY);
+		Sleep(50);
 		t++; 
 	}
 	return STATUS_OK;
@@ -688,7 +733,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 	Elevator_Direction d = e->direction;
 	// 当前方向有需求则不转向 否则相反方向有需求则转向 均无需求先STILL 
 	if (d == UP){
-		for (int i = e->ecur_level; i <= LEVEL_NUM; i++){
+		for (int i = e->ecur_level + 1; i <= LEVEL_NUM; i++){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
@@ -696,16 +741,21 @@ Elevator_Direction Direction_Change(Elevator *e){
 				return UP;
 			}
 		}
-		for (int i = e->ecur_level; i >= 1; i--){
+		for (int i = e->ecur_level - 1; i >= 1; i--){
 			if (e->levellist[i] == YES){
 				return DOWN;
 			}
 			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return DOWN;
 			}
+		}
+		if (LQ_Get_Num(e->ecur_level, UP) != 0){
+			return UP;
+		} else if (LQ_Get_Num(e->ecur_level, DOWN) != 0){
+			return DOWN;
 		}
 	} else if (d == DOWN){
-		for (int i = e->ecur_level; i >= 1; i--){
+		for (int i = e->ecur_level - 1; i >= 1; i--){
 			if (e->levellist[i] == YES){
 				return DOWN;
 			}
@@ -713,13 +763,18 @@ Elevator_Direction Direction_Change(Elevator *e){
 				return DOWN;
 			}
 		}
-		for (int i = e->ecur_level; i <= LEVEL_NUM; i++){
+		for (int i = e->ecur_level + 1; i <= LEVEL_NUM; i++){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
 			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
 				return UP;
 			}			
+		}
+		if (LQ_Get_Num(e->ecur_level, DOWN) != 0){
+			return DOWN;
+		} else if (LQ_Get_Num(e->ecur_level, UP) != 0){
+			return UP;
 		}
 	} 
 
@@ -758,18 +813,44 @@ Status Look_Algorithm(Elevator *e){
 			next_level++;
 		} else if (e->direction == DOWN && e->ecur_level > 1){ // 往下 
 			next_level--;
-		} else { // 理论上IDLE情况另外处理 在这里不会发生 但是为了保险
+		} else if (e->status == PARKING){ 
+			Level_Type tl = e->id == 0? 1: LEVEL_NUM;
+
+			if (tl == e->ecur_level){ // PARKING到候命层了
+				e->last_action_time = current_time;
+				e->status = IDLE;
+				e->direction = STILL;
+				Ani_Update_Elevator_Status(e->id, "待机");
+				return STATUS_OK;
+			} 
+
+			e->direction = Judge_Direction(e->ecur_level, tl);
+			Look_Algorithm(e); 
+		} else {
+			// 可能已经到最低层或最高层了 
 			e->status = IDLE;
 			e->direction = STILL;
 			e->idle_start_time = current_time;
-			
-			// 提前加入是否要回去待命检查
+
+			// 提前加入是否要回去待命检查 
 			EL_Insert(current_time + AUTO_ORDER_TIME, IDLE_CHECK, e->id, -1, e->ecur_level);
 			return STATUS_OK; 
 		}
 		e->last_action_time = current_time;
 		// 提前加入到达事件 
 		EL_Insert(current_time + MOVE_LEVEL_TIME, ELEVATOR_ARRIVAL, e->id, -1, next_level);
+		return STATUS_OK; 
+	}
+	if (d == STILL){  
+		e->direction = STILL;
+		if (e->status == RUNNING){
+			// 如果人刚刚好被另一台接走 此电梯缺少一个检查事件
+			e->last_action_time = current_time;
+			e->status = IDLE;
+			e->direction = STILL;
+			Ani_Update_Elevator_Status(e->id, "门已关（停留）");
+			EL_Insert(current_time + AUTO_ORDER_TIME, IDLE_CHECK, e->id, -1, e->ecur_level);
+		} 
 	}
 	return STATUS_OK;
 }

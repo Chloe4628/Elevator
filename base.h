@@ -5,7 +5,7 @@
 // 时间单位（毫秒） 
 #define ANIMATION_DELAY 70
 // 电梯总运行时间 
-#define MAX_SIMULATION_TIME 1000
+#define MAX_SIMULATION_TIME 1200
 // 电梯运行1F单位时间
 #define MOVE_LEVEL_TIME 20
 // 人出现时间间隔最大最小值 
@@ -27,7 +27,7 @@
 // 最大载客量 
 #define MAX_CAPACITY 15
 // 最多生成总人数
-#define MAX_PEOPLE 5
+#define MAX_PEOPLE 10
 
 // 时间类 
 typedef int Time_Type;
@@ -91,6 +91,7 @@ typedef struct{
 	Level_Type pend_level;
 	People_Status status;
 	int pnum;
+	int elenum;
 }People;
 // 乘客链表节点 
 typedef struct PL_Node{
