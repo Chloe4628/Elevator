@@ -27,7 +27,7 @@
 // 最大载客量 
 #define MAX_CAPACITY 15
 // 最多生成总人数
-#define MAX_PEOPLE 10
+#define MAX_PEOPLE 5
 
 // 时间类 
 typedef int Time_Type;
