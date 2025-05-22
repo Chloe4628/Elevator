@@ -101,3 +101,15 @@ Status LQ_Destroy(){
 	}
 	return STATUS_OK;
 }
+// 6.1 改进版 计算队列可进入长度
+int LQ_Get_Num_Wait(Level_Type n, Elevator_Direction direction, int id){
+	int cnt = 0;
+	LQ_Node *p = queues[n][direction].front->next;
+	while (p){
+		if (p->people.elenum == id || p->people.elenum == -1){
+			cnt++;
+		}
+		p = p->next;
+	}
+	return cnt;
+}

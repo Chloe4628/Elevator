@@ -107,9 +107,6 @@ Status Process_Event(EL_Node *event){
 			if (cp->status != WAITING){
 				exit(2); 
 			}
-//			printf("%dt时，%d号人到达%dF等待进电梯，想去%dF\n", cp->arr_time, cp->pnum, cp->pstart_level, cp->pend_level);
-			LQ_EnQueue(cp->pstart_level, Judge_Direction(cp->pstart_level, cp->pend_level), *cp);
-			Ani_Update_Waiting_Queue(cp->pstart_level, &queues[cp->pstart_level][UP], &queues[cp->pstart_level][DOWN]);
 			
 			char msg[100];
 			snprintf(msg, sizeof(msg), "%dt，%d号人到达%dF等待进电梯，想去%dF\n", current_time, cp->pnum, cp->pstart_level, cp->pend_level);
@@ -163,30 +160,24 @@ Status Process_Event(EL_Node *event){
 			
 			if (suitable != -1){
 				ce = &e[suitable];
+				cp->elenum = suitable;
 				if (ce->ecur_level != cp->pstart_level){ // 现在电梯和人不在同一层 标记 
-				
 					ce->levellist[cp->pstart_level] = YES;
 					if (ce->status == IDLE || ce->status == PARKING){
 						ce->status = RUNNING;
-//						printf("%dt时，空闲电梯%d收到%dF的%d号人需求，启动\n", current_time, suitable, cp->pstart_level, cp->pnum);
 						char msg[100];
-						snprintf(msg, sizeof(msg), "收到%dF的%d号人请求", cp->pstart_level, cp->pnum); 
+						snprintf(msg, sizeof(msg), "启动"); 
 						Ani_Update_Elevator_Status(suitable, msg);
 						
 						ce->direction = Judge_Direction(ce->ecur_level, cp->pstart_level);
 						Look_Algorithm(ce);
-					} else {
-//						printf("%dt时，工作电梯%d收到%dF的%d号人需求，将会响应\n", current_time, suitable, cp->pstart_level, cp->pnum);
-					}
+					} 
 					// 不是IDLE则继续当前状态 
 				} else { // 现在电梯和人在同一层 
-//					printf("%dt时，电梯%d在%dF遇到%d号人\n", current_time, suitable, cp->pstart_level, cp->pnum);
-					
 					switch (ce->status){
 						case (PARKING):
 						case (IDLE):
 						case (CLOSING):{
-//							printf("%dt时，电梯%d在%dF遇到%d号人，准备开门\n", current_time, suitable, cp->pstart_level, cp->pnum);
 							ce->status = OPENING; 							
 							Ani_Update_Elevator_Status(suitable, "开门中……");
 							
@@ -204,7 +195,6 @@ Status Process_Event(EL_Node *event){
 									ce->direction = required_direction;
 								}
 								// 需要特别处理 因为此处没有显式的门开了事件让人进入 
-//								printf("%dt时，电梯%d在%dF遇到%d号人，刚好开着门\n", current_time, suitable, cp->pstart_level, cp->pnum);
 								ce->status = SERVING;
 								Ani_Update_Elevator_Status(suitable, "门已开");
 								ce->reserved_people_num++;
@@ -262,7 +252,10 @@ Status Process_Event(EL_Node *event){
 				} 
 			} else {
 				// 没有合适电梯 则继续等待 人留在队列 后续由LOOK算法的判断方向和判断是否停靠处理
+				cp->elenum = -1;
 			}
+			LQ_EnQueue(cp->pstart_level, Judge_Direction(cp->pstart_level, cp->pend_level), *cp);
+			Ani_Update_Waiting_Queue(cp->pstart_level, &queues[cp->pstart_level][UP], &queues[cp->pstart_level][DOWN]);
 			// 此到达事件解决 产生下一个 
 			Generate_New_People();
 			break;
@@ -277,15 +270,6 @@ Status Process_Event(EL_Node *event){
 			Level_Type old_level = ce->ecur_level;
 			ce->ecur_level = event->level;
 			
-//			printf("%dt时，电梯%d来到%dF\n", current_time, ce->id, ce->ecur_level);
-//			printf("当前需求是：");
-//			for (int i = 1; i <= LEVEL_NUM; i++){
-//				if (ce->levellist[i] == YES){
-//					printf("%dF ", i);
-//				}
-//			}
-//			printf("\n");
-			
 			ce->last_action_time = current_time;
 			
 			Ani_Update_Elevator_Position(ce->id, old_level, ce->ecur_level, ce);
@@ -296,7 +280,6 @@ Status Process_Event(EL_Node *event){
 			if (!ce){
 				exit(5);
 			}
-//			printf("%dt时，电梯%d在%dF开门（载客：%d/%d）\n", current_time, ce->id, ce->ecur_level, ce->ecur_people_num, MAX_CAPACITY);
 			ce->status = OPEN;
 			ce->last_action_time = current_time;			
 			ce->idle_start_time = current_time;
@@ -340,10 +323,10 @@ Status Process_Event(EL_Node *event){
 					}
 				}
 				if (flag != UP){
-					if (LQ_Get_Num(ce->ecur_level, UP) != 0){
+					if (LQ_Get_Num_Wait(ce->ecur_level, UP, ce->id) != 0){
 						flag = UP;
 						ce->direction = UP;
-					} else if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
+					} else if (LQ_Get_Num_Wait(ce->ecur_level, DOWN, ce->id) != 0){
 						flag = DOWN;
 						ce->direction = DOWN;
 					}
@@ -359,10 +342,10 @@ Status Process_Event(EL_Node *event){
 					}
 				}
 				if (flag != DOWN){
-					if (LQ_Get_Num(ce->ecur_level, DOWN) != 0){
+					if (LQ_Get_Num_Wait(ce->ecur_level, DOWN, ce->id) != 0){
 						flag = DOWN;
 						ce->direction = DOWN;
-					} else if (LQ_Get_Num(ce->ecur_level, UP) != 0){
+					} else if (LQ_Get_Num_Wait(ce->ecur_level, UP, ce->id) != 0){
 						flag = UP;
 						ce->direction = UP;
 					}
@@ -376,7 +359,7 @@ Status Process_Event(EL_Node *event){
 
 			while (flag != STILL && qtr && ce->ecur_people_num + ce->reserved_people_num < MAX_CAPACITY){
 				if (io_time - qtr->people.arr_time <= qtr->people.max_wait && qtr->people.status == WAITING){
-					if (qtr->people.elenum != -1){
+					if (qtr->people.elenum != -1 && qtr->people.elenum != ce->id){
 						qtr = qtr->next;
 						continue;
 					}
@@ -427,7 +410,6 @@ Status Process_Event(EL_Node *event){
 			if (ce->reserved_people_num == 0){
 				ce->status = CLOSING;
 				ce->last_action_time = current_time;
-//				printf("%dt时，电梯%d在%dF开始关门\n", current_time, ce->id, ce->ecur_level);
 				char msg[100];
 				snprintf(msg, sizeof(msg), "关门中……");
 				Ani_Update_Elevator_Status(ce->id, msg);
@@ -444,7 +426,6 @@ Status Process_Event(EL_Node *event){
 			if (ce->status != CLOSING){
 				break;
 			} 
-//			printf("%dt时，电梯%d在%dF已经关门\n", current_time, ce->id, ce->ecur_level);
 			char msg[100];
 			snprintf(msg, sizeof(msg), "门已关");
 			Ani_Update_Elevator_Status(ce->id, msg);
@@ -463,7 +444,7 @@ Status Process_Event(EL_Node *event){
 					}
 				}
 				for (int i = 1; i <= LEVEL_NUM; i++){
-					if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
+					if (LQ_Get_Num_Wait(i, UP, ce->id) != 0 || LQ_Get_Num_Wait(i, DOWN, ce->id) != 0){
 						demand = STATUS_TRUE;
 						break;
 					}
@@ -483,11 +464,6 @@ Status Process_Event(EL_Node *event){
 						snprintf(msg, sizeof(msg), "门已关（停留）");
 						Ani_Update_Elevator_Status(ce->id, msg);
 
-						if (ce->id == 0){
-							Ani_Debug_A("不应该啊");
-						} else {
-							Ani_Debug_B("不应该啊");
-						}
 						// 提前加入是否要回去待命检查
 						EL_Insert(current_time + AUTO_ORDER_TIME, IDLE_CHECK, ce->id, -1, ce->ecur_level); 
 						break;
@@ -499,11 +475,6 @@ Status Process_Event(EL_Node *event){
 				ce->idle_start_time = current_time;
 				char msg[100];
 				snprintf(msg, sizeof(msg), "门已关（停留）");
-				if (ce->id == 0){
-					Ani_Debug_A("没事干了");
-				} else {
-					Ani_Debug_B("没事干了");
-				}
 				Ani_Update_Elevator_Status(ce->id, msg);
 				// 提前加入是否要回去待命检查
 				EL_Insert(current_time + AUTO_ORDER_TIME, IDLE_CHECK, ce->id, -1, ce->ecur_level); 
@@ -522,7 +493,6 @@ Status Process_Event(EL_Node *event){
 				ce->reserved_people_num--;
 				break;
 			}
-//			printf("%dt时，%d号人在%dF进入了电梯%d\n", current_time, cp->pnum, ce->ecur_level, ce->id);
 			// 把此人从队列中删除 
 			Elevator_Direction required_direction = Judge_Direction(cp->pstart_level, cp->pend_level);
 			if (LQ_Del(ce->ecur_level, required_direction, cp->pnum) == STATUS_ERROR){
@@ -564,7 +534,7 @@ Status Process_Event(EL_Node *event){
 			if (PL_Del(ce->peoplelist, tar) == STATUS_ERROR){
 				exit(6);
 			}
-//			printf("%dt时，%d号人在%dF离开了电梯%d，成功抵达\n", current_time, cp->pnum, ce->ecur_level, ce->id);
+
 			ce->ecur_people_num--;
 			ce->last_action_time = current_time; 
 			
@@ -588,8 +558,6 @@ Status Process_Event(EL_Node *event){
 			// 检查空闲时间 
 			if (ce->status == IDLE || current_time - ce->idle_start_time >= AUTO_ORDER_TIME){
 				if (ce->ecur_level != tl){
-//					printf("%dt时，电梯%d已经空闲超过%dt，返回%dF候命\n", current_time, ce->id, AUTO_ORDER_TIME, tl);
-					
 					ce->status = PARKING;
 					ce->direction = Judge_Direction(ce->ecur_level, tl);
 					Ani_Update_Elevator_Status(ce->id, "返回待机");
@@ -623,7 +591,6 @@ Status Process_Event(EL_Node *event){
 			}
 			
 			if (cp->status == WAITING){
-//				printf("%dt时，%d号人没耐心了，离开队列\n", current_time, cp->pnum);
 				cp->status = GIVE_UP;
 				give_up_people_num++;
 				
@@ -657,22 +624,22 @@ Status Simulation(){
 	EL_Node *current_event = event_list->next;
 	
 	Time_Type t = 0;
-	while (t <= MAX_SIMULATION_TIME){
+	while (t <= MAX_TIME){
 		current_time = t;
 		Ani_Update_Time(t);
 
 		while (current_event != NULL && current_event->time <= current_time){
-			if (current_event->time > MAX_SIMULATION_TIME){
+			if (current_event->time > MAX_TIME){
 				break;
 			}
 			Process_Event(current_event);
 			current_event = current_event->next;
 			// 上保险 
-			if (current_time >= MAX_SIMULATION_TIME * 2){
+			if (current_time >= MAX_TIME * 2){
 				exit(3);
 			}
 		} 
-		Sleep(50);
+		Sleep(ANIMATION_DELAY);
 		t++; 
 	}
 	return STATUS_OK;
@@ -680,44 +647,31 @@ Status Simulation(){
 // 是否停靠
 Status Is_Stop(Elevator *e){
 	Status stop = STATUS_FALSE;
-	if (e->levellist[e->ecur_level] == YES || LQ_Get_Num(e->ecur_level, e->direction) != 0){
+	if (e->levellist[e->ecur_level] == YES || LQ_Get_Num_Wait(e->ecur_level, e->direction, e->id) != 0){
 		stop = STATUS_TRUE;
-//		printf("%dt时，电梯%d停靠%dF\n", current_time, e->id, e->ecur_level); 
 		char msg[100];
 		snprintf(msg, sizeof(msg), "停靠%dF", e->ecur_level);
-		if (e->id == 0){
-			Ani_Debug_A(msg);
-		} else if (e->id == 1){
-			Ani_Debug_B(msg);
-		}
+
 		e->status = OPENING;
 		
 		// 提前将开门事件加入事件链表 
 		EL_Insert(current_time + DOOR_OPEN_CLOSE_TIME, DOOR_OPENED, e->id, -1, e->ecur_level);
 		e->levellist[e->ecur_level] = NO;
-	} else if (e->ecur_level == LEVEL_NUM && e->direction == UP && LQ_Get_Num(e->ecur_level, DOWN) != 0){
+	} else if (e->ecur_level == LEVEL_NUM && e->direction == UP && LQ_Get_Num_Wait(e->ecur_level, DOWN, e->id) != 0){
 		stop = STATUS_TRUE;
 		char msg[100];
 		snprintf(msg, sizeof(msg), "停靠%dF", e->ecur_level);
-		if (e->id == 0){
-			Ani_Debug_A(msg);
-		} else if (e->id == 1){
-			Ani_Debug_B(msg);
-		}
+
 		e->status = OPENING;
 		
 		// 提前将开门事件加入事件链表 
 		EL_Insert(current_time + DOOR_OPEN_CLOSE_TIME, DOOR_OPENED, e->id, -1, e->ecur_level);
 		e->levellist[e->ecur_level] = NO;
-	} else if (e->ecur_level == 1 && e->direction == DOWN && LQ_Get_Num(e->ecur_level, UP) != 0){
+	} else if (e->ecur_level == 1 && e->direction == DOWN && LQ_Get_Num_Wait(e->ecur_level, UP, e->id) != 0){
 		stop = STATUS_TRUE;
 		char msg[100];
 		snprintf(msg, sizeof(msg), "停靠%dF", e->ecur_level);
-		if (e->id == 0){
-			Ani_Debug_A(msg);
-		} else if (e->id == 1){
-			Ani_Debug_B(msg);
-		}
+
 		e->status = OPENING;
 		
 		// 提前将开门事件加入事件链表 
@@ -737,7 +691,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num_Wait(i, UP, e->id) != 0 || LQ_Get_Num_Wait(i, DOWN, e->id) != 0){
 				return UP;
 			}
 		}
@@ -745,13 +699,13 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return DOWN;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num_Wait(i, UP, e->id) != 0 || LQ_Get_Num_Wait(i, DOWN, e->id) != 0){
 				return DOWN;
 			}
 		}
-		if (LQ_Get_Num(e->ecur_level, UP) != 0){
+		if (LQ_Get_Num_Wait(e->ecur_level, UP, e->id) != 0){
 			return UP;
-		} else if (LQ_Get_Num(e->ecur_level, DOWN) != 0){
+		} else if (LQ_Get_Num_Wait(e->ecur_level, DOWN, e->id) != 0){
 			return DOWN;
 		}
 	} else if (d == DOWN){
@@ -759,7 +713,7 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return DOWN;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num_Wait(i, UP, e->id) != 0 || LQ_Get_Num_Wait(i, DOWN, e->id) != 0){
 				return DOWN;
 			}
 		}
@@ -767,13 +721,13 @@ Elevator_Direction Direction_Change(Elevator *e){
 			if (e->levellist[i] == YES){
 				return UP;
 			}
-			if (LQ_Get_Num(i, UP) != 0 || LQ_Get_Num(i, DOWN) != 0){
+			if (LQ_Get_Num_Wait(i, UP, e->id) != 0 || LQ_Get_Num_Wait(i, DOWN, e->id) != 0){
 				return UP;
 			}			
 		}
-		if (LQ_Get_Num(e->ecur_level, DOWN) != 0){
+		if (LQ_Get_Num_Wait(e->ecur_level, DOWN, e->id) != 0){
 			return DOWN;
-		} else if (LQ_Get_Num(e->ecur_level, UP) != 0){
+		} else if (LQ_Get_Num_Wait(e->ecur_level, UP, e->id) != 0){
 			return UP;
 		}
 	} 
@@ -787,7 +741,6 @@ Status Look_Algorithm(Elevator *e){
 	// 该方向无需求 反方向有需求 转向 
 	// PARKING除外
 	if (e->status != PARKING && d != STILL && d != e->direction){
-//		printf("%dt时，电梯%d在%dF转向\n", current_time, e->id, e->ecur_level);
 		char msg[100];
 		snprintf(msg, sizeof(msg), "转换方向"); 
 		if (e->id == 0){
@@ -809,9 +762,9 @@ Status Look_Algorithm(Elevator *e){
 	// 不必转向 前方有需求 或者PARKING状态 
 	if ((e->status == RUNNING && d != STILL && d == e->direction) || e->status == PARKING){
 		Level_Type next_level = e->ecur_level;
-		if (e->direction == UP && e->ecur_level < LEVEL_NUM){ // 往上 
+		if (e->direction == UP && e->ecur_level < LEVEL_NUM){  
 			next_level++;
-		} else if (e->direction == DOWN && e->ecur_level > 1){ // 往下 
+		} else if (e->direction == DOWN && e->ecur_level > 1){ 
 			next_level--;
 		} else if (e->status == PARKING){ 
 			Level_Type tl = e->id == 0? 1: LEVEL_NUM;

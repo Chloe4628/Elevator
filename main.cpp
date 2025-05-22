@@ -9,10 +9,14 @@
 #include "eventlist.h"
 #include "levelqueue.h"
 
+// 总时长
+Time_Type MAX_TIME = 1000;
+// 总人数 
+int MAX_PEOPLE = 5;
 // 总时钟 表示真实时间 
 Time_Type current_time = 0; 
 // 人数组
-People people[MAX_PEOPLE + 1]; 
+People people[16]; 
 // 楼层队列
 LQ_Queue queues[LEVEL_NUM + 1][2]; 
 // 事件链表
@@ -26,10 +30,10 @@ int give_up_people_num = 0;
 // 生成的人数 没啥用
 int generated_people_num = 0; 
 // 电梯
-Elevator e[2]; // 0表示电梯A 1表示电梯B 一共两台电梯 
+Elevator e[2];
 
 int main(int argc, char** argv){
-	srand(5);
+	srand(time(NULL));
 	Open_Up();
 	Simulation();
 	Stat();

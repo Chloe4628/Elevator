@@ -19,6 +19,8 @@ Status LQ_Del(Level_Type n, Elevator_Direction direction, int num);
 int LQ_Get_Num(Level_Type n, Elevator_Direction direction);
 // 7.释放 
 Status LQ_Destroy();
+// 6.1 改进版 计算队列可进入长度
+int LQ_Get_Num_Wait(Level_Type n, Elevator_Direction direction, int id);
 
 #endif
 

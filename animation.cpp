@@ -22,6 +22,30 @@ void Clear_Line(int x_start, int y, int length){
 		printf(" ");
 	}
 } 
+// 输入最大人数
+void Input_People(){
+	printf("\n\n\n\n");
+	printf("\n\t\t                   请输入最大人数（1-10）:");
+	while (scanf("%d", &MAX_PEOPLE) != 1 || MAX_PEOPLE <= 0 || MAX_PEOPLE >= 11){
+		printf("\t\t                   输入有误 自动设定人数为5\n"); 
+		MAX_PEOPLE = 5; 
+		_getch();
+		break;
+	}
+	system("cls");
+}
+// 输入总时间 
+void Input_Time(){
+	printf("\n\n\n\n");
+	printf("\n\t\t                   请输入最大运行时间（1-3000）:");
+	while (scanf("%d", &MAX_TIME) != 1 || MAX_TIME <= 0 || MAX_TIME >= 3001){
+		printf("\t\t                   输入有误 自动设定时间为1000t\n"); 
+		MAX_TIME = 1000; 
+		_getch();
+		break;
+	}
+	system("cls");
+} 
 // 将楼层编号转换为控制台y坐标
 int Floor2Y(Level_Type floor){
 	return BASE_Y + (LEVEL_NUM - floor) * FLOOR_HEIGHT;
@@ -76,11 +100,6 @@ void Draw_Static_Frame(){
 		gotoxy(WAITING_QUEUE_X, Floor2Y(fl) - 1);
 		printf("队伍："); 
 	} 
-	// 帮助文字
-//	gotoxy(WAITING_QUEUE_X, BASE_Y - 3);
-//	printf("队伍：");
-//	gotoxy(WAITING_QUEUE_X, BASE_Y - 1);
-//	printf("状态：");
 }
 // 空白覆盖电梯显示
 void Erase_Elevator(int id, Level_Type floor){
@@ -130,7 +149,7 @@ void Draw_Elevator(int id, Level_Type floor, Elevator *e){
 		}
 		p = p->next;
 	}
-	// 空格填充剩余区域 最后是右括号
+	
 	while (current_pos < ELEVATOR_WIDTH - 1){
 		buffer[current_pos] = ' ';
 		current_pos++;
@@ -145,7 +164,7 @@ void Draw_Elevator(int id, Level_Type floor, Elevator *e){
 // 空白覆盖等候队列
 void Erase_Waiting_Queue(Level_Type floor){
 	int y = Floor2Y(floor);
-	Clear_Line(WAITING_QUEUE_X + 6, y - 1, 25);
+	Clear_Line(WAITING_QUEUE_X + 6, y - 1, 30);
 } 
 // 等候队列
 void Draw_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
@@ -173,16 +192,21 @@ void Draw_Waiting_Queue(Level_Type floor, LQ_Queue *uq, LQ_Queue *dq){
 // 欢迎界面
 void Ani_Show_Title(){
 	printf("\n\n\n");
-	printf("\n\t\t*********************************************************");
-	printf("\n\t\t_________________________________________________________");
-	printf("\n\t\t〓〓〓〓〓〓〓〓〓欢迎来到电梯管理系统 〓〓〓〓〓〓〓〓〓\n\n");
-	printf("\t\t                      按任意键开始模拟\n");
-	printf("\n\t\t*********************************************************\n");
+	printf("\n\t\t********************************************************");
+	printf("\n\t\t                                                        ");
+	printf("\n\t\t〓〓〓〓〓〓〓〓〓欢迎来到电梯管理系统〓〓〓〓〓〓〓〓〓\n\n");
+	printf("\t\t                    按任意键开始模拟");
+	printf("\n\t\t                                                        ");
+	printf("\n\t\t********************************************************\n");
 	_getch();
 } 
 // 初始化
 void Ani_Init(){
 	system("cls");
+	
+	Input_Time();
+	Input_People(); 
+	
 	Draw_Static_Frame();
 	Ani_Update_Time(0);
 	
@@ -233,15 +257,9 @@ void Ani_Update_General_Person_Status(const char *msg){
 } 
 // debug提示电梯A
 void Ani_Debug_A(const char *msg){
-	Clear_Line(15, 3, 20);
-	gotoxy(15, 3);
-	printf("调试：%s", msg);
 } 
 // debug提示电梯B
 void Ani_Debug_B(const char *msg){
-	Clear_Line(43, 3, 20);
-	gotoxy(43, 3);
-	printf("调试：%s", msg);
 } 
 // 退出
 void Ani_Clean_Up(){

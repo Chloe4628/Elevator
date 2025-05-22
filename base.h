@@ -3,17 +3,15 @@
 #define BASE_H
 
 // 时间单位（毫秒） 
-#define ANIMATION_DELAY 70
-// 电梯总运行时间 
-#define MAX_SIMULATION_TIME 1200
+#define ANIMATION_DELAY 100
 // 电梯运行1F单位时间
 #define MOVE_LEVEL_TIME 20
 // 人出现时间间隔最大最小值 
-#define ITV_MAX 100
-#define ITV_MIN 0
+#define ITV_MAX 150
+#define ITV_MIN 50
 // 愿意等待时间的最大最小值 
-#define WAIT_MAX 500
-#define WAIT_MIN 200
+#define WAIT_MAX 700
+#define WAIT_MIN 500
 // 电梯开关门时间
 #define DOOR_OPEN_CLOSE_TIME 20
 // 人进出时间
@@ -26,8 +24,6 @@
 #define LEVEL_NUM 5
 // 最大载客量 
 #define MAX_CAPACITY 15
-// 最多生成总人数
-#define MAX_PEOPLE 5
 
 // 时间类 
 typedef int Time_Type;
@@ -127,13 +123,15 @@ typedef struct {
     int reserved_people_num; 
     Elevator_Status status; 
     Time_Type last_action_time; // 上次动作时间
-    Time_Type idle_start_time; // 空闲开始时间 (用于IDLE_CHECK)
+    Time_Type idle_start_time; // 空闲开始时间 
     int id;
 }Elevator;
 
 // 外部变量  
+extern Time_Type MAX_TIME;
+extern int MAX_PEOPLE;
 extern Time_Type current_time; 
-extern People people[MAX_PEOPLE + 1]; 
+extern People people[16]; 
 extern LQ_Queue queues[LEVEL_NUM + 1][2]; 
 extern EL_Node *event_list;  
 extern Time_Type Total_Wait_Time; 
