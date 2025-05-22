@@ -1,6 +1,6 @@
 CXX = g++
 TARGET = elevator
-OBJS = main.o peoplelist.o eventlist.o levelqueue.o func.o
+OBJS = main.o peoplelist.o eventlist.o levelqueue.o func.o animation.o
 CXXFLAGS = -std=gnu++11 -Wall -O2 -g
 
 all: $(TARGET)
